@@ -5,202 +5,202 @@
 #define RELAY_PIN   13
 #define RELAY_ACTIVE_LOW false
 
-// === NASTAVENÍ TESTU ===
-#define TEST_DOBA_MS      5UL * 60UL * 1000UL  // 5 minut celkem
-#define TEST_PAUZA_MS     2000                  // 2 sekundy mezi open/close
+// === TEST SETTINGS ===
+#define TEST_DURATION_MS  5UL * 60UL * 1000UL  // 5 minutes total
+#define TEST_INTERVAL_MS  2000                  // 2 seconds between open/close
 
 Adafruit_NeoPixel pixel(NUM_PIXELS, RGB_PIN, NEO_GRB + NEO_KHZ800);
 
-bool releSepnute = false;
+bool relayEngaged = false;
 int ledBrightness = 40;
 
-// Stav automatického testu
+// Automatic test state
 bool autoTest = false;
 unsigned long autoTestStart = 0;
-unsigned long posledniPrepnuti = 0;
-int pocetCyklu = 0;
+unsigned long lastToggle = 0;
+int cycleCount = 0;
 
 char inputBuffer[50];
 byte inputIndex = 0;
 
-void nastavLedCervena() {
+void setLedRed() {
   pixel.setBrightness(ledBrightness);
   pixel.setPixelColor(0, pixel.Color(255, 0, 0));
   pixel.show();
 }
 
-void nastavLedZelena() {
+void setLedGreen() {
   pixel.setBrightness(ledBrightness);
   pixel.setPixelColor(0, pixel.Color(0, 255, 0));
   pixel.show();
 }
 
-void nastavLedModra() {
+void setLedBlue() {
   pixel.setBrightness(ledBrightness);
   pixel.setPixelColor(0, pixel.Color(0, 0, 255));
   pixel.show();
 }
 
-void nastavRelePin(bool sepnout) {
+void setRelayPin(bool engage) {
   if (RELAY_ACTIVE_LOW) {
-    digitalWrite(RELAY_PIN, sepnout ? LOW : HIGH);
+    digitalWrite(RELAY_PIN, engage ? LOW : HIGH);
   } else {
-    digitalWrite(RELAY_PIN, sepnout ? HIGH : LOW);
+    digitalWrite(RELAY_PIN, engage ? HIGH : LOW);
   }
 }
 
-void nastavRele(bool sepnout) {
-  releSepnute = sepnout;
-  nastavRelePin(sepnout);
+void setRelay(bool engage) {
+  relayEngaged = engage;
+  setRelayPin(engage);
   delay(50);
 
-  if (releSepnute) {
-    nastavLedZelena();
-    Serial.println("Stav: OPEN / OTEVRENO");
+  if (relayEngaged) {
+    setLedGreen();
+    Serial.println("State: OPEN");
   } else {
-    nastavLedCervena();
-    Serial.println("Stav: CLOSED / ZAVRENO");
+    setLedRed();
+    Serial.println("State: CLOSED");
   }
 }
 
-void spustAutoTest() {
+void startAutoTest() {
   autoTest = true;
   autoTestStart = millis();
-  posledniPrepnuti = millis();
-  pocetCyklu = 0;
+  lastToggle = millis();
+  cycleCount = 0;
   Serial.println();
-  Serial.println("=== AUTO TEST SPUSTEN ===");
-  Serial.print("Doba: 5 minut, pauza: ");
-  Serial.print(TEST_PAUZA_MS / 1000);
+  Serial.println("=== AUTO TEST STARTED ===");
+  Serial.print("Duration: 5 minutes, interval: ");
+  Serial.print(TEST_INTERVAL_MS / 1000);
   Serial.println("s");
-  Serial.println("Pro zastaveni posli: stop");
+  Serial.println("Send stop to abort");
   Serial.println();
-  nastavRele(true); // začni otevřením
+  setRelay(true); // start open
 }
 
-void zastavAutoTest(bool dokoncen) {
+void stopAutoTest(bool completed) {
   autoTest = false;
-  nastavRele(false); // bezpečně zavři ventil
+  setRelay(false); // safely close valve
   Serial.println();
-  if (dokoncen) {
-    Serial.println("=== AUTO TEST DOKONCEN ===");
+  if (completed) {
+    Serial.println("=== AUTO TEST COMPLETED ===");
   } else {
-    Serial.println("=== AUTO TEST ZASTAVEN ===");
+    Serial.println("=== AUTO TEST STOPPED ===");
   }
-  Serial.print("Celkem cyklu: ");
-  Serial.println(pocetCyklu);
+  Serial.print("Total cycles: ");
+  Serial.println(cycleCount);
   Serial.println();
 }
 
-void zpracujAutoTest() {
+void processAutoTest() {
   if (!autoTest) return;
 
-  unsigned long ted = millis();
+  unsigned long now = millis();
 
-  // Zkontroluj jestli uplynulo 5 minut
-  if (ted - autoTestStart >= TEST_DOBA_MS) {
-    zastavAutoTest(true);
+  // Check if 5 minutes have elapsed
+  if (now - autoTestStart >= TEST_DURATION_MS) {
+    stopAutoTest(true);
     return;
   }
 
-  // Přepni každé 2 sekundy
-  if (ted - posledniPrepnuti >= TEST_PAUZA_MS) {
-    posledniPrepnuti = ted;
+  // Toggle every 2 seconds
+  if (now - lastToggle >= TEST_INTERVAL_MS) {
+    lastToggle = now;
 
-    if (!releSepnute) pocetCyklu++; // počítej celé cykly (open+close = 1 cyklus)
+    if (!relayEngaged) cycleCount++; // count full cycles (open+close = 1 cycle)
 
-    // Výpis zbývajícího času
-    unsigned long zbyvaSec = (TEST_DOBA_MS - (ted - autoTestStart)) / 1000;
+    // Print remaining time
+    unsigned long remainingSec = (TEST_DURATION_MS - (now - autoTestStart)) / 1000;
     Serial.print("[");
-    Serial.print(zbyvaSec / 60);
+    Serial.print(remainingSec / 60);
     Serial.print("m");
-    Serial.print(zbyvaSec % 60);
-    Serial.print("s zbývá | cyklus ");
-    Serial.print(pocetCyklu);
-    Serial.print("] → ");
+    Serial.print(remainingSec % 60);
+    Serial.print("s left | cycle ");
+    Serial.print(cycleCount);
+    Serial.print("] -> ");
 
-    nastavRele(!releSepnute);
+    setRelay(!relayEngaged);
   }
 }
 
-void vypisNapovedu() {
+void printHelp() {
   Serial.println();
-  Serial.println("Dostupne prikazy:");
-  Serial.println("  open / otevreno  = otevrit ventil");
-  Serial.println("  closed / zavreno = zavrit ventil");
-  Serial.println("  test             = spustit 5min auto test");
-  Serial.println("  stop             = zastavit auto test");
-  Serial.println("  status           = aktualni stav");
-  Serial.println("  help             = napoveda");
+  Serial.println("Available commands:");
+  Serial.println("  open             = open valve");
+  Serial.println("  closed           = close valve");
+  Serial.println("  test             = start 5min auto test");
+  Serial.println("  stop             = stop auto test");
+  Serial.println("  status           = current state");
+  Serial.println("  help             = help");
   Serial.println();
 }
 
-void vypisStatus() {
+void printStatus() {
   Serial.println();
   Serial.println("=== STATUS ===");
-  Serial.print("Ventil: ");
-  Serial.println(releSepnute ? "OPEN" : "CLOSED");
+  Serial.print("Valve: ");
+  Serial.println(relayEngaged ? "OPEN" : "CLOSED");
   Serial.print("Auto test: ");
   if (autoTest) {
-    unsigned long zbyvaSec = (TEST_DOBA_MS - (millis() - autoTestStart)) / 1000;
-    Serial.print("BEZ (zbývá ");
-    Serial.print(zbyvaSec / 60);
+    unsigned long remainingSec = (TEST_DURATION_MS - (millis() - autoTestStart)) / 1000;
+    Serial.print("RUNNING (");
+    Serial.print(remainingSec / 60);
     Serial.print("m");
-    Serial.print(zbyvaSec % 60);
-    Serial.println("s)");
-    Serial.print("Cyklu: ");
-    Serial.println(pocetCyklu);
+    Serial.print(remainingSec % 60);
+    Serial.println("s left)");
+    Serial.print("Cycles: ");
+    Serial.println(cycleCount);
   } else {
-    Serial.println("VYPNUT");
+    Serial.println("OFF");
   }
   Serial.println();
 }
 
-void prevedNaMalaPismena(char *text) {
+void toLowerCase(char *text) {
   for (int i = 0; text[i]; i++) {
     if (text[i] >= 'A' && text[i] <= 'Z') text[i] += 32;
   }
 }
 
-void odstranMezeryNaKonci(char *text) {
+void trimTrailingWhitespace(char *text) {
   int len = strlen(text);
   while (len > 0 && (text[len-1]=='\n'||text[len-1]=='\r'||text[len-1]==' '||text[len-1]=='\t')) {
     text[--len] = '\0';
   }
 }
 
-char* odstranMezeryNaZacatku(char *text) {
+char* trimLeadingWhitespace(char *text) {
   while (*text == ' ' || *text == '\t') text++;
   return text;
 }
 
-void zpracujPrikaz(char *rawCmd) {
-  odstranMezeryNaKonci(rawCmd);
-  char *cmd = odstranMezeryNaZacatku(rawCmd);
-  prevedNaMalaPismena(cmd);
+void processCommand(char *rawCmd) {
+  trimTrailingWhitespace(rawCmd);
+  char *cmd = trimLeadingWhitespace(rawCmd);
+  toLowerCase(cmd);
   if (strlen(cmd) == 0) return;
 
-  if (strcmp(cmd, "open") == 0 || strcmp(cmd, "otevreno") == 0) {
-    if (autoTest) { Serial.println("Nejdrive zastav test prikazem: stop"); return; }
-    nastavRele(true);
+  if (strcmp(cmd, "open") == 0) {
+    if (autoTest) { Serial.println("Stop the test first with: stop"); return; }
+    setRelay(true);
   }
-  else if (strcmp(cmd, "closed") == 0 || strcmp(cmd, "zavreno") == 0) {
-    if (autoTest) { Serial.println("Nejdrive zastav test prikazem: stop"); return; }
-    nastavRele(false);
+  else if (strcmp(cmd, "closed") == 0) {
+    if (autoTest) { Serial.println("Stop the test first with: stop"); return; }
+    setRelay(false);
   }
   else if (strcmp(cmd, "test") == 0) {
-    if (autoTest) { Serial.println("Test uz bezi!"); return; }
-    spustAutoTest();
+    if (autoTest) { Serial.println("Test already running!"); return; }
+    startAutoTest();
   }
   else if (strcmp(cmd, "stop") == 0) {
-    if (!autoTest) { Serial.println("Test nebezi."); return; }
-    zastavAutoTest(false);
+    if (!autoTest) { Serial.println("Test is not running."); return; }
+    stopAutoTest(false);
   }
-  else if (strcmp(cmd, "status") == 0) vypisStatus();
-  else if (strcmp(cmd, "help") == 0 || strcmp(cmd, "?") == 0) vypisNapovedu();
+  else if (strcmp(cmd, "status") == 0) printStatus();
+  else if (strcmp(cmd, "help") == 0 || strcmp(cmd, "?") == 0) printHelp();
   else {
-    Serial.print("Neznamy prikaz: "); Serial.println(cmd);
-    vypisNapovedu();
+    Serial.print("Unknown command: "); Serial.println(cmd);
+    printHelp();
   }
 }
 
@@ -214,23 +214,23 @@ void setup() {
   pixel.show();
 
   pinMode(RELAY_PIN, OUTPUT);
-  releSepnute = false;
-  nastavRelePin(false);
+  relayEngaged = false;
+  setRelayPin(false);
   delay(50);
-  nastavLedCervena();
+  setLedRed();
 
   Serial.println();
-  Serial.println("=== ESP32-S3 VENTIL TEST + AUTO ===");
-  vypisNapovedu();
+  Serial.println("=== ESP32-S3 VALVE TEST + AUTO ===");
+  printHelp();
 }
 
 void loop() {
-  // Zpracuj sériový vstup
+  // Process serial input
   while (Serial.available() > 0) {
     char c = Serial.read();
     if (c == '\n' || c == '\r') {
       inputBuffer[inputIndex] = '\0';
-      if (inputIndex > 0) zpracujPrikaz(inputBuffer);
+      if (inputIndex > 0) processCommand(inputBuffer);
       inputIndex = 0;
     } else {
       if (inputIndex < sizeof(inputBuffer) - 1) {
@@ -239,8 +239,8 @@ void loop() {
     }
   }
 
-  // Auto test logika (neblokující)
-  zpracujAutoTest();
+  // Auto test logic (non-blocking)
+  processAutoTest();
 
   delay(1);
 }

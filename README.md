@@ -1,125 +1,125 @@
-# Ovládání relé – RO ventil (ESP32-S3)
+# Relay Control – RO Valve (ESP32-S3)
 
-Firmware pro ovládání solenoidového ventilu u reverzní osmózy (RO) přes ESP32-S3 DevKitC-1. Projekt nabízí dvě varianty nasazení:
+Firmware for controlling a solenoid valve on a reverse osmosis (RO) system via ESP32-S3 DevKitC-1. The project offers two deployment options:
 
-- **ESPHome** – doporučená varianta pro integraci do Home Assistant
-- **Arduino sketch** – záložní firmware pro ruční testování přes sériový monitor
+- **ESPHome** – recommended for Home Assistant integration
+- **Arduino sketch** – fallback firmware for manual testing over the serial monitor
 
 ## Hardware
 
-| Komponenta | Pin | Popis |
-|------------|-----|-------|
-| Relé / ventil | GPIO 13 | `RELAY_ACTIVE_LOW = false` (aktivní HIGH) |
-| Status LED (WS2812) | GPIO 48 | Vestavěná RGB LED na desce |
-| Deska | ESP32-S3 DevKitC-1 | Varianta s USB CDC |
+| Component | Pin | Description |
+|-----------|-----|-------------|
+| Relay / valve | GPIO 13 | `RELAY_ACTIVE_LOW = false` (active HIGH) |
+| Status LED (WS2812) | GPIO 48 | On-board RGB LED |
+| Board | ESP32-S3 DevKitC-1 | USB CDC variant |
 
-### Indikace LED
+### LED Indication
 
-| Barva | Význam |
-|-------|--------|
-| Červená | Ventil zavřený (CLOSED) |
-| Zelená | Ventil otevřený (OPEN) |
+| Color | Meaning |
+|-------|---------|
+| Red | Valve closed (CLOSED) |
+| Green | Valve open (OPEN) |
 
-## Struktura repozitáře
+## Repository Structure
 
 ```
 ovladani-rele/
 ├── esphome/
-│   ├── ro_ventil.yaml        # ESPHome konfigurace
-│   └── secrets.yaml.example  # Šablona pro Wi-Fi a API klíč
-├── ovladani_rele.ino         # Arduino záložní firmware
+│   ├── ro_ventil.yaml        # ESPHome configuration
+│   └── secrets.yaml.example  # Template for Wi-Fi and API key
+├── ovladani_rele.ino         # Arduino fallback firmware
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
-## ESPHome (doporučeno)
+## ESPHome (recommended)
 
-### Požadavky
+### Requirements
 
-- [ESPHome](https://esphome.io/) 2024.6.0 nebo novější
-- Home Assistant (volitelné, ale typické použití)
+- [ESPHome](https://esphome.io/) 2024.6.0 or newer
+- Home Assistant (optional, but typical use case)
 
-### Instalace
+### Installation
 
-1. Zkopírujte šablonu secrets:
+1. Copy the secrets template:
 
    ```bash
    cp esphome/secrets.yaml.example esphome/secrets.yaml
    ```
 
-2. Upravte `esphome/secrets.yaml` – doplňte Wi-Fi a API encryption key:
+2. Edit `esphome/secrets.yaml` – fill in Wi-Fi credentials and API encryption key:
 
    ```yaml
-   wifi_ssid: "TVOJE_WIFI_SSID"
-   wifi_password: "TVOJE_WIFI_HESLO"
-   api_encryption_key: "vygeneruj_base64_klic_nebo_z_esphome"
+   wifi_ssid: "YOUR_WIFI_SSID"
+   wifi_password: "YOUR_WIFI_PASSWORD"
+   api_encryption_key: "generate_base64_key_or_from_esphome"
    ```
 
-   Klíč vygenerujete příkazem `esphome secrets generate` nebo při prvním připojení zařízení.
+   Generate the key with `esphome secrets generate` or when pairing the device for the first time.
 
-3. Nahrajte firmware:
+3. Flash the firmware:
 
    ```bash
    esphome run esphome/ro_ventil.yaml
    ```
 
-### Entity v Home Assistant
+### Home Assistant Entities
 
-| Entity | Typ | Popis |
-|--------|-----|-------|
-| `switch.ventil_ro` | Switch | Otevření / zavření ventilu |
-| `light.status_led` | Light | Stavová RGB LED |
-| `binary_sensor.ventil_ro_otevren` | Binary sensor | Zrcadlí stav ventilu pro automatizace |
+| Entity | Type | Description |
+|--------|------|-------------|
+| `switch.ventil_ro` | Switch | Open / close the valve |
+| `light.status_led` | Light | Status RGB LED |
+| `binary_sensor.ventil_ro_otevren` | Binary sensor | Mirrors valve state for automations |
 
-Při zapnutí ventilu se LED rozsvítí zeleně, při vypnutí červeně. Ventil se po restartu vždy vrátí do vypnutého stavu (`restore_mode: ALWAYS_OFF`).
+When the valve is turned on, the LED turns green; when off, red. After a restart, the valve always returns to the off state (`restore_mode: ALWAYS_OFF`).
 
-## Arduino sketch (záložní / test)
+## Arduino Sketch (fallback / testing)
 
-Pro ruční testování bez Wi-Fi nahrajte `ovladani_rele.ino` do Arduino IDE.
+For manual testing without Wi-Fi, upload `ovladani_rele.ino` in the Arduino IDE.
 
-### Závislosti
+### Dependencies
 
-- Knihovna **Adafruit NeoPixel**
+- **Adafruit NeoPixel** library
 
-### Nastavení v Arduino IDE
+### Arduino IDE Settings
 
-- Deska: **ESP32S3 Dev Module**
-- USB CDC On Boot: **Enabled** (pro sériový monitor)
+- Board: **ESP32S3 Dev Module**
+- USB CDC On Boot: **Enabled** (for serial monitor)
 - Baud rate: **115200**
 
-### Sériové příkazy
+### Serial Commands
 
-| Příkaz | Alias | Akce |
-|--------|-------|------|
-| `open` | `otevreno` | Otevřít ventil |
-| `closed` | `zavreno` | Zavřít ventil |
-| `test` | — | Spustit 5min automatický test (přepínání každé 2 s) |
-| `stop` | — | Zastavit automatický test |
-| `status` | — | Zobrazit aktuální stav |
-| `help` | `?` | Nápověda |
+| Command | Action |
+|---------|--------|
+| `open` | Open the valve |
+| `closed` | Close the valve |
+| `test` | Start 5-minute automatic test (toggle every 2 s) |
+| `stop` | Stop the automatic test |
+| `status` | Show current state |
+| `help` / `?` | Help |
 
-Automatický test běží 5 minut, přepíná ventil každé 2 sekundy a po skončení (nebo příkazem `stop`) ventil bezpečně zavře.
+The automatic test runs for 5 minutes, toggling the valve every 2 seconds. When it finishes (or after `stop`), the valve closes safely.
 
-## Zapojení ventilu
+## Valve Wiring
 
 ```
-ESP32-S3 GPIO 13 ──► IN relé modulu ──► COM/NO ──► Solenoid ventil (+12 V / GND dle modulu)
+ESP32-S3 GPIO 13 ──► Relay module IN ──► COM/NO ──► Solenoid valve (+12 V / GND per module)
 ```
 
-Před prvním zapnutím ověřte:
+Before first use, verify:
 
-- Napájecí napětí ventilu odpovídá specifikaci
-- Relé modul je dimenzovaný na zátěž ventilu
-- Vodní vedení je správně utěsněné
+- Valve supply voltage matches the specification
+- Relay module is rated for the valve load
+- Water lines are properly sealed
 
-## Bezpečnost
+## Safety
 
-- Ventil ovládá přívod vody – při poruše může dojít k úniku.
-- Po restartu zařízení je ventil vždy zavřený.
-- Při automatickém testu nelze ventil ovládat ručně – nejdříve pošlete `stop`.
-- Soubor `esphome/secrets.yaml` obsahuje citlivé údaje a **nesmí** být commitován do gitu.
+- The valve controls the water supply – a fault may cause a leak.
+- After a device restart, the valve is always closed.
+- Manual control is disabled during the automatic test – send `stop` first.
+- The file `esphome/secrets.yaml` contains sensitive data and **must not** be committed to git.
 
-## Licence
+## License
 
-MIT – viz soubor [LICENSE](LICENSE).
+MIT – see [LICENSE](LICENSE).
