@@ -1,3 +1,23 @@
+# ESPHome
 esphome/secrets.yaml
 **/.esphome/
 .esphome.external_components/
+
+# Arduino / PlatformIO build
+build/
+*.elf
+*.bin
+*.hex
+*.map
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
