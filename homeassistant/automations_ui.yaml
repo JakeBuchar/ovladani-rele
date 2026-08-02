@@ -1,0 +1,270 @@
+# Automatizace — „RO voda — Sonoff MQTT“ (vlož do HA UI)
+#
+# Helper: timer.ro_napousteni
+# Ventil: switch.ro_napousteni_vody_ventil_ro
+# Automatizace 2: automations_timer_finished_ui.yaml
+#
+# ======================== MAPOVÁNÍ (uprav časy níže) ========================
+# Tlačítko │ Single  │ Double  │ Triple  │ Long
+# ---------|---------|---------|---------|--------
+# 1        │  5 min  │ 10 min  │ 15 min  │ STOP
+# 2        │  6 min  │ 12 min  │ 18 min  │ STOP
+# 3        │  7 min  │ 14 min  │ 21 min  │ STOP
+# 4        │  8 min  │ 16 min  │ 24 min  │ STOP
+# ============================================================================
+
+alias: "RO voda — Sonoff MQTT"
+description: "SNZB-01M → ventil + timer (každé tlačítko zvlášť)"
+triggers:
+  - trigger: mqtt
+    topic: zigbee2mqtt/Ovladani_vody_sonoff/action
+conditions: []
+actions:
+  - choose:
+
+      # ========== SINGLE PRESS ==========
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'single_button_1' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:05:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'single_button_2' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:06:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'single_button_3' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:07:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'single_button_4' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:08:00"
+
+      # ========== DOUBLE PRESS ==========
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'double_button_1' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:10:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'double_button_2' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:12:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'double_button_3' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:14:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'double_button_4' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:16:00"
+
+      # ========== TRIPLE PRESS ==========
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'triple_button_1' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:15:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'triple_button_2' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:18:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'triple_button_3' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:21:00"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'triple_button_4' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_on
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+          - action: timer.start
+            target:
+              entity_id: timer.ro_napousteni
+            data:
+              duration: "00:24:00"
+
+      # ========== LONG PRESS = STOP ==========
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'long_button_1' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_off
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'long_button_2' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_off
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'long_button_3' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_off
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.payload == 'long_button_4' }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: timer.ro_napousteni
+          - action: switch.turn_off
+            target:
+              entity_id: switch.ro_napousteni_vody_ventil_ro
+
+mode: queued
+max_exceeded: silent

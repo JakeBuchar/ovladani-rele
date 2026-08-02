@@ -1,0 +1,45 @@
+# Zkopíruj do /config/packages/ro_voda.yaml
+# V configuration.yaml musí být:  homeassistant: packages: !include_dir_named packages
+#
+# Pak: Nástroje pro vývojáře → YAML → Všechny YAML konfigurace → Načíst
+
+script:
+  napousteni_vody:
+    alias: "Napouštění vody (minuty)"
+    description: "Zapne ventil RO, po zadané době vypne"
+    mode: restart
+    icon: mdi:water-pump
+    fields:
+      minuty:
+        name: Minuty
+        description: Doba napouštění v minutách
+        required: true
+        selector:
+          number:
+            min: 1
+            max: 120
+            step: 1
+            unit_of_measurement: min
+            mode: box
+    sequence:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.ro_napousteni_vody_ventil_ro
+      - delay:
+          minutes: "{{ minuty | int }}"
+      - action: switch.turn_off
+        target:
+          entity_id: switch.ro_napousteni_vody_ventil_ro
+
+  zastavit_napousteni:
+    alias: "Zastavit napouštění vody"
+    description: "Okamžitě zavře ventil RO"
+    mode: restart
+    icon: mdi:valve-closed
+    sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.ro_napousteni_vody_ventil_ro
+      - action: script.turn_off
+        target:
+          entity_id: script.napousteni_vody

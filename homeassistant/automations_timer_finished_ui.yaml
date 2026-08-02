@@ -1,0 +1,16 @@
+# Automatizace 2 — NOVÁ „RO voda — timer dokončen“
+# Po uplynutí timeru zavře ventil.
+
+alias: "RO voda — timer dokončen"
+description: "Vypne ventil po doběhnutí timeru"
+triggers:
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.ro_napousteni
+conditions: []
+actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.ro_napousteni_vody_ventil_ro
+mode: single
